@@ -22,8 +22,8 @@ k8s_obj_file="deployment.yaml"; NODE_IP=''; str_sec=""
 license_text="LICENSE.txt"
 
 # wso2 image variables
-IMG_DEST="docker.wso2.com"
-IMG_TAG="6.0.0.0"
+IMG_DEST="local"
+IMG_TAG="6.0.0"
 
 
 : ${NP_1:=30443};
@@ -416,7 +416,7 @@ data:
 
     [database.identity_db]
     type = "mysql"
-    url = "jdbc:mysql://wso2is-rdbms-service-mysql:3306/WSO2IS_IDENTITY_DB?autoReconnect=true&amp;useSSL=false"
+    url = "jdbc:mysql://wso2is-rdbms-service-mysql:3306/WSO2IS_IDENTITY_DB?allowPublicKeyRetrieval=true&amp;autoReconnect=true&amp;useSSL=false"
     username = "wso2carbon"
     password = "wso2carbon"
     driver = "com.mysql.cj.jdbc.Driver"
@@ -426,7 +426,7 @@ data:
 
     [database.shared_db]
     type = "mysql"
-    url = "jdbc:mysql://wso2is-rdbms-service-mysql:3306/WSO2IS_SHARED_DB?autoReconnect=true&amp;useSSL=false"
+    url = "jdbc:mysql://wso2is-rdbms-service-mysql:3306/WSO2IS_SHARED_DB?allowPublicKeyRetrieval=true&amp;autoReconnect=true&amp;useSSL=false"
     username = "wso2carbon"
     password = "wso2carbon"
     driver = "com.mysql.cj.jdbc.Driver"
@@ -444,11 +444,15 @@ data:
       DROP DATABASE IF EXISTS WSO2IS_SHARED_DB;
       DROP DATABASE IF EXISTS WSO2IS_IDENTITY_DB;
 
-      CREATE DATABASE WSO2IS_SHARED_DB;
-      CREATE DATABASE WSO2IS_IDENTITY_DB;
+      CREATE DATABASE WSO2IS_SHARED_DB CHARACTER SET latin1;
+      CREATE DATABASE WSO2IS_IDENTITY_DB CHARACTER SET latin1;
 
-      GRANT ALL ON WSO2IS_SHARED_DB.* TO 'wso2carbon'@'%' IDENTIFIED BY 'wso2carbon';
-      GRANT ALL ON WSO2IS_IDENTITY_DB.* TO 'wso2carbon'@'%' IDENTIFIED BY 'wso2carbon';
+      DROP USER 'wso2carbon'@'%';
+      FLUSH PRIVILEGES;
+      CREATE USER 'wso2carbon'@'%' IDENTIFIED BY 'wso2carbon';
+
+      GRANT ALL ON WSO2IS_SHARED_DB.* TO 'wso2carbon'@'%';
+      GRANT ALL ON WSO2IS_IDENTITY_DB.* TO 'wso2carbon'@'%';
 
       USE WSO2IS_SHARED_DB;
 
@@ -2404,7 +2408,7 @@ spec:
     spec:
       containers:
         - name: wso2is-mysql
-          image: mysql:5.7
+          image: mysql/mysql-server:latest-aarch64
           livenessProbe:
             exec:
               command:
@@ -2538,7 +2542,7 @@ spec:
               - nc -z localhost 9443
           initialDelaySeconds: 250
           periodSeconds: 10
-        imagePullPolicy: Always
+        imagePullPolicy: Never
         resources:
           requests:
             memory: "2Gi"
@@ -2608,7 +2612,7 @@ function viewLicenseText(){
 
   echo "PLEASE READ THE BELOW \"WSO2 SOFTWARE LICENSE AGREEMENT\" CAREFULLY BEFORE COMPLETING THE INSTALLATION PROCESS AND USING THE SOFTWARE."
 
-  sleep 2s
+  sleep 2
 
   less ${license_text}
 
@@ -2620,7 +2624,7 @@ function viewLicenseText(){
       elif [[ ${isAgree} == N || ${isAgree} == n ]]; then
           echo "Installation aborted since you didn't accept the license terms"
           echo "Aborting Installation ..."
-          sleep 1s
+          sleep 1
           exit 0
       else
           echo "Please enter Y or N to continue"
