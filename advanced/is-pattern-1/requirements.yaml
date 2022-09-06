@@ -15,5 +15,5 @@
 dependencies:
   - name: mysql-is
     version: "5.11.0-5"
-    repository: "https://helm.wso2.com"
+    repository: "file://../databases/mysql-is"
     condition: wso2.deployment.dependencies.mysql.enabled
